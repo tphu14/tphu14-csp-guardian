@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSP Guardian</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- ── Header ──────────────────────────────────────── -->
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🛡️</span>
+      <span class="logo-text">CSP Guardian</span>
+      <span class="version">v3</span>
+    </div>
+    <div class="header-right">
+      <div id="ws-indicator" class="ws-dot ws-dot--off" title="Real-time feed"></div>
+      <div id="status-badge" class="badge badge--idle">Idle</div>
+    </div>
+  </header>
+
+  <!-- ── Controls ────────────────────────────────────── -->
+  <section class="controls">
+    <button id="btn-start" class="btn btn--primary">▶ Start Recording</button>
+    <button id="btn-stop"  class="btn btn--danger" disabled>⏹ Stop &amp; Analyze</button>
+    <div id="resource-count" class="resource-count">–</div>
+  </section>
+
+  <!-- ── Live Preview Bar (shows while recording) ────── -->
+  <section id="preview-bar" class="preview-bar hidden">
+    <div class="preview-label">Live CSP Preview</div>
+    <div id="preview-csp" class="preview-csp">Recording…</div>
+  </section>
+
+  <!-- ── Risk Score ───────────────────────────────────── -->
+  <section id="risk-section" class="risk-section hidden">
+    <div class="risk-header">
+      <span class="risk-label">Risk Score</span>
+      <span id="risk-score-value" class="risk-value">0</span>
+      <span id="risk-level-badge" class="risk-level-badge">–</span>
+    </div>
+    <div class="risk-bar-bg">
+      <div id="risk-bar" class="risk-bar" style="width:0%"></div>
+    </div>
+    <div id="risk-breakdown" class="risk-breakdown"></div>
+  </section>
+
+  <!-- ── Tabs ─────────────────────────────────────────── -->
+  <section id="tabs-section" class="tabs-section hidden">
+    <div class="tab-nav" role="tablist">
+      <button class="tab-btn active" data-tab="generated">Generated</button>
+      <button class="tab-btn"        data-tab="hardened">Hardened ✨</button>
+      <button class="tab-btn"        data-tab="diff">
+        Diff <span id="diff-badge" class="badge-count diff-badge hidden">0</span>
+      </button>
+      <button class="tab-btn"        data-tab="explanation">Explain</button>
+      <button class="tab-btn"        data-tab="issues">
+        Issues <span id="issues-badge" class="badge-count">0</span>
+      </button>
+      <button class="tab-btn"        data-tab="history">History</button>
+      <button class="tab-btn"        data-tab="violations">
+        Violations <span id="violations-badge" class="badge-count live-badge">0</span>
+      </button>
+    </div>
+
+    <!-- Generated CSP -->
+    <div id="tab-generated" class="tab-panel active">
+      <div class="panel-actions">
+        <button class="btn-sm" id="copy-generated">📋 Copy</button>
+        <span class="panel-meta" id="generated-meta"></span>
+      </div>
+      <pre id="generated-csp-text" class="csp-code">Analyzing…</pre>
+    </div>
+
+    <!-- Hardened CSP -->
+    <div id="tab-hardened" class="tab-panel">
+      <div class="panel-actions">
+        <button class="btn-sm" id="copy-hardened">📋 Copy</button>
+        <button class="btn-sm btn-sm--ai" id="btn-analyze-ai">✨ Analyze with AI</button>
+        <span id="provider-badge" class="provider-badge hidden"></span>
+      </div>
+      <div id="ai-loading" class="ai-loading hidden">
+        <div class="spinner"></div><span>Calling AI…</span>
+      </div>
+      <pre id="hardened-csp-text" class="csp-code muted">Run AI analysis to see hardened CSP</pre>
+      <div id="report-uri-section" class="report-uri-box hidden">
+        <div class="report-uri-label">📡 Add to CSP to collect violations:</div>
+        <code id="report-uri-code" class="report-uri-code"></code>
+        <button class="btn-sm" id="copy-report-uri">📋 Copy</button>
+      </div>
+    </div>
+
+    <!-- Diff View -->
+    <div id="tab-diff" class="tab-panel">
+      <div class="panel-actions">
+        <span class="panel-label">Generated → Hardened CSP diff</span>
+        <button class="btn-sm" id="btn-refresh-diff">↺ Refresh</button>
+      </div>
+      <div id="diff-container" class="diff-container">
+        <div class="muted" style="padding:12px">Run AI analysis first to see diff.</div>
+      </div>
+    </div>
+
+    <!-- Explanation -->
+    <div id="tab-explanation" class="tab-panel">
+      <div id="explanation-text" class="explanation-body muted">
+        Run AI analysis to see explanations.
+      </div>
+    </div>
+
+    <!-- Issues -->
+    <div id="tab-issues" class="tab-panel">
+      <ul id="issues-list" class="issues-list">
+        <li class="issue-item muted">No issues yet.</li>
+      </ul>
+    </div>
+
+    <!-- History -->
+    <div id="tab-history" class="tab-panel">
+      <div class="panel-actions">
+        <button class="btn-sm" id="btn-load-history">🔄 Load</button>
+        <span id="history-stats" class="panel-meta"></span>
+      </div>
+      <div id="history-list" class="history-list">
+        <div class="muted" style="padding:12px">Click Load to see history.</div>
+      </div>
+    </div>
+
+    <!-- Violations -->
+    <div id="tab-violations" class="tab-panel">
+      <div class="panel-actions">
+        <button class="btn-sm" id="btn-load-violations">🔄 Refresh</button>
+        <span class="live-indicator" id="live-label">● LIVE</span>
+      </div>
+      <div id="violations-list" class="violations-list">
+        <div class="muted" style="padding:12px">No violations yet.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ───────────────────────────────────────── -->
+  <footer id="footer-actions" class="footer-actions hidden">
+    <button class="btn-sm" id="btn-export">⬇ Export JSON</button>
+    <button class="btn-sm" id="btn-reset">↺ Reset</button>
+  </footer>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

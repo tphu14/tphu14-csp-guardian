@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+
+# Node
+node_modules/
+
+# Environment
+.env
+.env.*
+
+# Database
+*.db
+
+# IDE
+.vscode/
+
+# Logs
+*.log
+
+# Build
+dist/
+build/

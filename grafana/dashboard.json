@@ -1,0 +1,95 @@
+{
+  "__inputs": [{ "name": "DS_PROMETHEUS", "label": "Prometheus", "type": "datasource", "pluginId": "prometheus" }],
+  "__requires": [{ "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }],
+  "title": "CSP Guardian Monitoring",
+  "uid": "csp-guardian-v3",
+  "version": 1,
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Total Analyses",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "csp_guardian_analyses_stored_total", "datasource": "${DS_PROMETHEUS}" }],
+      "options": { "colorMode": "background", "graphMode": "area" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" },
+        "thresholds": { "steps": [{"color":"green","value":0}] } } }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Total Violations",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "csp_guardian_violations_stored_total", "datasource": "${DS_PROMETHEUS}" }],
+      "options": { "colorMode": "background" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" },
+        "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":10},{"color":"red","value":50}] } } }
+    },
+    {
+      "id": 3, "type": "stat", "title": "Avg Risk Score",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "csp_guardian_avg_risk_score", "datasource": "${DS_PROMETHEUS}" }],
+      "options": { "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" },
+        "thresholds": { "steps": [{"color":"green","value":0},{"color":"yellow","value":35},{"color":"red","value":70}] } } }
+    },
+    {
+      "id": 4, "type": "stat", "title": "Active WS Connections",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "expr": "csp_guardian_active_ws_connections", "datasource": "${DS_PROMETHEUS}" }],
+      "options": { "colorMode": "background" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" },
+        "thresholds": { "steps": [{"color":"blue","value":0}] } } }
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Analyze Requests / min",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(csp_guardian_analyze_requests_total[1m])", "legendFormat": "{{status}} / {{risk_level}} / {{llm_provider}}", "datasource": "${DS_PROMETHEUS}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "LLM Response Time (p95)",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, rate(csp_guardian_llm_response_duration_seconds_bucket[5m]))", "legendFormat": "p95 {{provider}}", "datasource": "${DS_PROMETHEUS}" },
+        { "expr": "histogram_quantile(0.50, rate(csp_guardian_llm_response_duration_seconds_bucket[5m]))", "legendFormat": "p50 {{provider}}", "datasource": "${DS_PROMETHEUS}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "CSP Violations / min",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "rate(csp_guardian_violation_reports_total[1m])", "legendFormat": "{{violated_directive}}", "datasource": "${DS_PROMETHEUS}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "HTTP Request Duration (p95)",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, rate(csp_guardian_http_request_duration_seconds_bucket[5m]))", "legendFormat": "p95 {{endpoint}}", "datasource": "${DS_PROMETHEUS}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "LLM Errors",
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 6 },
+      "targets": [
+        { "expr": "rate(csp_guardian_llm_errors_total[5m])", "legendFormat": "{{provider}} / {{error_type}}", "datasource": "${DS_PROMETHEUS}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps",
+        "color": { "mode": "thresholds" },
+        "thresholds": { "steps": [{"color":"green","value":0},{"color":"red","value":0.01}] } } }
+    },
+    {
+      "id": 10, "type": "table", "title": "HTTP Requests by Endpoint",
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 6 },
+      "targets": [
+        { "expr": "sort_desc(sum by (endpoint, method, status_code) (csp_guardian_http_requests_total))", "instant": true, "legendFormat": "", "datasource": "${DS_PROMETHEUS}" }
+      ],
+      "options": { "sortBy": [{ "displayName": "Value", "desc": true }] }
+    }
+  ]
+}

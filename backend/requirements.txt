@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+groq
+google-genai
+anthropic
+slowapi
+pydantic
+python-dotenv
+httpx
+prometheus-client
+sentry-sdk[fastapi]
+pytest
+pytest-asyncio
+pytest-cov
